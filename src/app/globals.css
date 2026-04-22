@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lab-bg: #050505;
+  --lab-fg: #e8e8ec;
+  --lab-muted: #6b7280;
+  --lab-grid: rgba(255, 255, 255, 0.045);
+  --lab-border: rgba(255, 255, 255, 0.08);
+  --lab-accent: rgba(56, 189, 248, 0.35);
+}
+
+html,
+body {
+  background-color: var(--lab-bg);
+  color: var(--lab-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Thin grid — Dark Lab */
+.lab-grid {
+  background-color: var(--lab-bg);
+  background-image:
+    linear-gradient(var(--lab-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--lab-grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+}
+
+/* Bento card surface */
+.lab-panel {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+  border: 1px solid var(--lab-border);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+.lab-panel:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+@layer utilities {
+  .text-lab-muted {
+    color: var(--lab-muted);
+  }
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.2);
+  color: #fff;
+}

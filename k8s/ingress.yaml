@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mongols-app-web
+  namespace: mongols-app
+  labels:
+    app.kubernetes.io/name: mongols-app
+  annotations:
+    # nginx example; switch annotations for traefik / cloud LB as needed
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: www.mongols.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mongols-app-web
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - www.mongols.app
+      secretName: mongols-app-tls

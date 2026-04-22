@@ -1,0 +1,14 @@
+.git
+.github
+.next
+node_modules
+npm-debug.log*
+README.md
+.env
+.env.*
+!.env.example
+*.md
+.DS_Store
+coverage
+.turbo
+.k8s-build
