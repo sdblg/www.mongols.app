@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-mongols-app
+  namespace: hub-mongols-app
+  labels:
+    app: hub-mongols-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hub-mongols-app
+  template:
+    metadata:
+      labels:
+        app: hub-mongols-app
+    spec:
+      containers:
+      - name: nextjs-hub
+        image: mongols-app:v2
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+          - name: NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: turnstile-keys
+                key: site-key
+          - name: TURNSTILE_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: turnstile-keys
+                key: secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-mongols-app-svc
+  namespace: hub-mongols-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: hub-mongols-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
