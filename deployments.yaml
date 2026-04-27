@@ -32,6 +32,14 @@ spec:
               secretKeyRef:
                 name: turnstile-keys
                 key: secret-key
+          - name: NOTIFICATION_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: notification-secrets
+                key: API_KEY
+          # Same-namespace service: override for local (e.g. http://host.docker.internal:8080/v1/notify)
+          - name: NOTIFICATION_API_URL
+            value: http://notification-api.hub-mongols-app.svc.cluster.local:8080/v1/notify
 ---
 apiVersion: v1
 kind: Service

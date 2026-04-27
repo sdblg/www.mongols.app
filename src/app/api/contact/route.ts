@@ -37,6 +37,45 @@ async function verifyTurnstile(token: string, remoteip?: string | null) {
   return { ok: true as const };
 }
 
+const DEFAULT_NOTIFY_URL = "http://notification-api:8080/v1/notify";
+const DEFAULT_CONTACT_TO = "info@mongols.app";
+
+async function sendNotification(args: {
+  to: string;
+  subject: string;
+  text: string;
+  traceId: string;
+}) {
+  const apiKey = process.env.NOTIFICATION_API_KEY;
+  const baseUrl = process.env.NOTIFICATION_API_URL ?? DEFAULT_NOTIFY_URL;
+  if (!apiKey) {
+    return { ok: false as const, reason: "Notification API key not configured" };
+  }
+
+  const res = await fetch(baseUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "X-Trace-Id": args.traceId,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: args.to,
+      subject: `${args.subject}from hub`,
+      text: args.text,
+    }),
+  });
+
+  if (!res.ok) {
+    const snippet = (await res.text()).slice(0, 500);
+    return {
+      ok: false as const,
+      reason: `Notification API returned ${res.status}: ${snippet || res.statusText}`,
+    };
+  }
+  return { ok: true as const };
+}
+
 export async function POST(req: Request) {
   let json: Body;
   try {
@@ -76,9 +115,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Challenge failed" }, { status: 403 });
   }
 
-  // Hook: forward to ticketing / email provider (Resend, SES, etc.).
+  const to = process.env.NOTIFICATION_CONTACT_TO ?? DEFAULT_CONTACT_TO;
+  const traceId = crypto.randomUUID();
+
+  const sent = await sendNotification({
+    to,
+    subject,
+    text: message,
+    traceId,
+  });
+
+  if (!sent.ok) {
+    if (sent.reason === "Notification API key not configured") {
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 503 });
+    }
+    if (process.env.NODE_ENV === "development") {
+      console.error("[contact] notification-api", sent.reason);
+    }
+    return NextResponse.json({ error: "Failed to send message" }, { status: 502 });
+  }
+
   if (process.env.NODE_ENV === "development") {
-    console.info("[contact] verified", {
+    console.info("[contact] notified", {
+      traceId,
       subjectLen: subject.length,
       bodyLen: message.length,
     });
