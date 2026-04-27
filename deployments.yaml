@@ -27,7 +27,7 @@ spec:
               secretKeyRef:
                 name: turnstile-keys
                 key: site-key
-          - name: TURNSTILE_SECRET_KEY
+          - name: CLOUDFLARE_TURNSTILE_SECRET_KEY
             valueFrom:
               secretKeyRef:
                 name: turnstile-keys
