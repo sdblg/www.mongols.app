@@ -22,7 +22,8 @@ spec:
         ports:
         - containerPort: 3000
         env:
-          - name: NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
+          # Runtime site key (client loads via /api/turnstile-site-key — NEXT_PUBLIC_* is build-time only)
+          - name: CLOUDFLARE_TURNSTILE_SITE_KEY
             valueFrom:
               secretKeyRef:
                 name: turnstile-keys

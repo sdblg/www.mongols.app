@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Icon } from "@/components/Icon";
 import { Send } from "lucide-react";
@@ -8,7 +8,8 @@ import { Send } from "lucide-react";
 type Status = "idle" | "sending" | "ok" | "error";
 
 export function SecurityContactForm() {
-  const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY ?? "";
+  /** null = loading config from server (runtime env, not build-time NEXT_PUBLIC) */
+  const [siteKey, setSiteKey] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -17,11 +18,29 @@ export function SecurityContactForm() {
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [widgetKey, setWidgetKey] = useState(0);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/turnstile-site-key");
+        const data = (await res.json()) as { siteKey?: string };
+        const key = typeof data.siteKey === "string" ? data.siteKey : "";
+        if (!cancelled) setSiteKey(key);
+      } catch {
+        if (!cancelled) setSiteKey("");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const onSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setErrorDetail(null);
       if (honeypot) return;
+      if (siteKey === null) return;
       if (!siteKey) {
         setStatus("error");
         setErrorDetail("Turnstile is not configured (missing site key).");
@@ -142,7 +161,11 @@ export function SecurityContactForm() {
         />
       </div>
 
-      {siteKey ? (
+      {siteKey === null ? (
+        <p className="rounded border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-xs text-white/45">
+          Loading verification…
+        </p>
+      ) : siteKey ? (
         <div className="flex min-h-[65px] flex-col gap-2">
           <span className="font-mono text-[10px] uppercase tracking-wider text-white/35">
             Verification
@@ -159,15 +182,17 @@ export function SecurityContactForm() {
       ) : (
         <p className="rounded border border-amber-500/25 bg-amber-500/5 px-3 py-2 font-mono text-xs text-amber-200/90">
           Set{" "}
+          <code className="text-amber-100/90">CLOUDFLARE_TURNSTILE_SITE_KEY</code> (runtime, e.g.
+          Kubernetes) or{" "}
           <code className="text-amber-100/90">NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY</code>{" "}
-          to enable the widget.
+          at build time to enable the widget.
         </p>
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="submit"
-          disabled={status === "sending" || !siteKey}
+          disabled={status === "sending" || siteKey === null || !siteKey}
           className="inline-flex items-center justify-center gap-2 rounded border border-sky-500/40 bg-sky-500/10 px-5 py-2.5 font-mono text-xs uppercase tracking-wider text-sky-200 transition-colors hover:border-sky-400/60 hover:bg-sky-500/15 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Icon icon={Send} size={14} />
