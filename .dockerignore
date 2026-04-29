@@ -8,6 +8,7 @@ README.md
 .env.*
 !.env.example
 *.md
+!data-deletion-instructions.md
 .DS_Store
 coverage
 .turbo
